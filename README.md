@@ -9,3 +9,5 @@ nossPowMint
 ## pip install pow
 ## pip install requests
 
+# 运行命令： python nossPowMint.py
+
