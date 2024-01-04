@@ -79,6 +79,7 @@ async def run_script():
     for i in range(maxNumber):
         # 获取最新的区块号
         latest_block = w3.eth.block_number
+        # 获取最新区块号的所以data信息
         newBlock = w3.eth.get_block(latest_block)
 
         # 获取最新的区块号信息
@@ -101,7 +102,7 @@ async def run_script():
             event_id = data["eventId"]
 
             # 打印交易的倒数第10个区块号发送方信息
-            print("当前获取到的ARB区块信息：", newBlock,"当前获取到的ARB交易地址信息：",newAddress)
+            print("当前获取到的ARB区块信息：", blockNumber,"当前获取到的ARB交易Hash信息：",blockHash)
 
 
             # 获取当前的时间戳
