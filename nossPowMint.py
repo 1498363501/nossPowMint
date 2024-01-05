@@ -35,30 +35,20 @@ def write(val):
         file.write(str(val))
     return val
 
-
-# mint
-def post_event(e):
-    url = "https://api-worker.noscription.org/inscribe/postEvent"
-    headers = {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-        "content-type": "application/json",
-        "sec-ch-ua": "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site"
-    }
-
-    response = requests.post(url, headers=headers, data=e)
-    if response.status_code==200 :
-        print("挖掘成功, 提交结果",response.status_code)
-        print("")
-
-
-# 跑的脚步
+# 跑的脚本
 async def run_script():
+
+    class color:
+        PURPLE = '\033[95m'
+        CYAN = '\033[96m'
+        DARKCYAN = '\033[36m'
+        BLUE = '\033[94m'
+        GREEN = '\033[92m'
+        YELLOW = '\033[93m'
+        RED = '\033[91m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+        END = '\033[0m'
 
     w3 = Web3(Web3.WebsocketProvider(rpc_url))   # RPC是wss协议时使用
     try:
@@ -83,7 +73,7 @@ async def run_script():
         newBlock = w3.eth.get_block(latest_block)
 
         # 获取最新的区块号信息
-        blockNumber = w3.eth.get_block(latest_block).get('number')
+        blockNumber =  str(w3.eth.get_block(latest_block).get('number'))
 
         # 获取最新的交易hash值
         prefix = "0x" * 1  # 生成以 1 个0 开头的字符串
@@ -101,14 +91,11 @@ async def run_script():
             # 获取值
             event_id = data["eventId"]
 
-            # 打印交易的倒数第10个区块号发送方信息
-            print("当前获取到的ARB区块信息：", blockNumber,"当前获取到的ARB交易Hash信息：",blockHash)
-
 
             # 获取当前的时间戳
             created_at = int(time.time())
-            nonce=''.join(random.choices(string.ascii_lowercase + string.digits, k=13))
-            print("postEvent接口的id:",event_id,"当前提交的created_at：",created_at,"当前提交的nonce：",nonce)
+            nonce=''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+            print(color.RED + "postEvent接口的id:",event_id,"当前提交的created_at：",created_at,"当前提交的nonce：",nonce+color.RED)
 
             e_copy = Event(
                 content="{\"p\":\"nrc-20\",\"op\":\"mint\",\"tick\":\"noss\",\"amt\":\"10\"}",
@@ -121,7 +108,7 @@ async def run_script():
                 ]
             )
 
-            print("最新event_id：",event_id,"最新区块：",blockNumber,"最新的交易hash值：",blockHash)
+            print(color.YELLOW + "最新区块：",blockNumber,"最新的交易hash值：",blockHash + color.YELLOW)
             e_copy.created_at = created_at
             e_copy.tags.append(["e", event_id, "wss://relay.noscription.org/", "reply"])
             e_copy.tags.append(["seq_witness", blockNumber, blockHash])
@@ -135,9 +122,31 @@ async def run_script():
             sk = PrivateKey(bytes.fromhex(identity_pk.hex()))
             sig = sk.sign(bytes.fromhex(e_copy.id))
             e_copy.sig = sig.hex()
+            event_json={
+                "event":e_copy.to_dict()
+            }
+            #提交的data数据
+            comintData= json.dumps(event_json)
             print("")
-            print("event",json.dumps(e_copy.to_dict()))
-            post_event({'event': json.dumps(e_copy.to_dict())})
+            print("event_json",comintData)
+
+            url = "https://api-worker.noscription.org/inscribe/postEvent"
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "accept-language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+                "content-type": "application/json",
+                "sec-ch-ua": "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-site"
+            }
+
+            response = requests.post(url, headers=headers, data=comintData)
+            if response.status_code==200 :
+                print("挖掘成功, 提交结果",response.status_code)
+                print("")
 
             #查询余额
             responses = requests.get("https://api-worker.noscription.org/indexer/balance?npub="+"npub13pcf67auh2s6s262tsq6dyk2hkky2ra6kearsm3hvq0muld0wwpqzstrgk")  # npub13pcf67auh2s6s262tsq6dyk2hkky2ra6kearsm3hvq0muld0wwpqzstrgk 为你的nostr地址
@@ -149,7 +158,7 @@ async def run_script():
                     toaster.show_toast("挖到了！！！", f"新增{data[0]['balance'] - old}个, 总量{data[0]['balance']}", duration=5)
                     write(data[0]['balance'])
             else:
-                print("余额",0)
+                print(color.DARKCYAN +"余额", 0)
 
 # 运行脚本
 if __name__ == "__main__":
